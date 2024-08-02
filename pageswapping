@@ -1,0 +1,79 @@
+import random
+
+# Constants
+PAGE_SIZE = 4  # Size of each page (in units)
+MEMORY_SIZE = 16  # Total physical memory size (in units)
+DISK_SIZE = 64  # Total disk size (in units)
+NUM_PAGES = DISK_SIZE // PAGE_SIZE  # Number of pages on the disk
+
+# Data structures
+memory = [None] * (MEMORY_SIZE // PAGE_SIZE)  # Physical memory pages
+disk = [i for i in range(NUM_PAGES)]  # Disk with pages represented by integers
+
+# Process class
+class Process:
+    def __init__(self, pid, num_pages):
+        self.pid = pid
+        self.num_pages = num_pages
+        self.page_table = {}
+        self.load_pages()
+    
+    def load_pages(self):
+        """Simulate loading pages into memory"""
+        for i in range(self.num_pages):
+            page_number = random.randint(0, NUM_PAGES - 1)
+            if len(self.page_table) < len(memory):
+                # There is still space in memory
+                if page_number not in self.page_table:
+                    memory[self.page_table.get(page_number, len(self.page_table))] = page_number
+                    self.page_table[page_number] = len(self.page_table)
+            else:
+                # Simulate page replacement
+                evicted_page = random.choice(list(self.page_table.keys()))
+                print(f"Evicting page {evicted_page} from memory to disk.")
+                # Find an empty slot or replace an existing one
+                empty_slot = self.page_table[evicted_page]
+                memory[empty_slot] = page_number
+                self.page_table.pop(evicted_page)
+                self.page_table[page_number] = empty_slot
+
+    def access_page(self, page_number):
+        """Access a page, simulate page fault and swap if needed"""
+        if page_number not in self.page_table:
+            print(f"Page fault for page {page_number}. Swapping in from disk...")
+            self.swap_in(page_number)
+        else:
+            print(f"Page {page_number} is in memory.")
+
+    def swap_in(self, page_number):
+        """Handle swapping pages"""
+        # If memory is full, evict a page
+        if len(self.page_table) >= len(memory):
+            evicted_page = random.choice(list(self.page_table.keys()))
+            print(f"Evicting page {evicted_page} from memory to disk.")
+            empty_slot = self.page_table[evicted_page]
+            memory[empty_slot] = None
+            self.page_table.pop(evicted_page)
+            disk.append(evicted_page)
+        
+        # Load new page into memory
+        for i in range(len(memory)):
+            if memory[i] is None:
+                memory[i] = page_number
+                self.page_table[page_number] = i
+                break
+
+def main():
+    # Create two processes with different page requirements
+    process1 = Process(pid=1, num_pages=5)
+    process2 = Process(pid=2, num_pages=7)
+    
+    print("Simulating page access:")
+    for i in range(3):
+        process1.access_page(random.randint(0, 10))
+    process2.access_page(10)
+    process2.access_page(3)
+    process2.access_page(9)
+
+if __name__ == "__main__":
+    main()
